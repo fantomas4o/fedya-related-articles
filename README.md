@@ -8,7 +8,7 @@ Boost your **SEO**, reduce **bounce rate**, and keep visitors engaged by showing
 - **Smart matching** based on tags and categories
 - **Stunning responsive cards** with featured images
 - **Auto-display** at the end of posts (toggle on/off)
-- **Manual placement** with `[grok_related]` shortcode
+- **Manual placement** with `[fedya_related]` shortcode
 - **Customizable**: title, number of posts, layout
 - **Zero bloat**: no external CSS/JS – loads instantly
 - **Fully translatable** (ready for any language)

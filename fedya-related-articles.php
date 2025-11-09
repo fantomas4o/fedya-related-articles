@@ -1,14 +1,13 @@
 <?php
 /**
  * Plugin Name: Fedya Related Articles
- * Plugin URI: https://urocibg.eu/
+ * Plugin URI: https://github.com/fantomas4o/fedya-related-articles
  * Description: Красиви свързани статии с миниатюри, cards дизайн и пълен контрол. Автоматично или с shortcode [fedya_related] или [fedya]. Подобрява SEO и задържане на посетители.
- * Version: 3.4
+ * Version: 3.5
  * Author: fedya Serafiev
  * Author URI: https://urocibg.eu/
  * License: GPL v2 or later
- * Text Domain: fedya-related
- * Domain Path: /languages
+ * Text Domain: fedya-related-articles
  */
 
 if (!defined('ABSPATH')) exit;
@@ -20,11 +19,10 @@ class fedya_Related_Articles {
         
         // Двата shortcode-а водят към същата функция
         add_shortcode('fedya_related', [$this, 'shortcode']);
-        add_shortcode('fedya', [$this, 'shortcode']); // НОВИЯТ shortcode
+        add_shortcode('fedya', [$this, 'shortcode']);
         
         add_action('admin_menu', [$this, 'add_settings_page']);
         add_action('admin_init', [$this, 'register_settings']);
-        load_plugin_textdomain('fedya-related', false, dirname(plugin_basename(__FILE__)) . '/languages/');
     }
 
     public function init() {
@@ -51,18 +49,17 @@ class fedya_Related_Articles {
             return $content;
         }
 
-        $title = get_option('fedya_related_title', __('Може да ви е интересно и:', 'fedya-related'));
+        $title = get_option('fedya_related_title', __('Може да ви е интересно и:', 'fedya-related-articles'));
         $content .= $this->render_related($related, $title);
 
         return $content;
     }
 
     public function shortcode($atts) {
-        // Подобрени атрибути: limit, title, columns
         $atts = shortcode_atts([
             'limit' => $this->get_limit(),
-            'title' => get_option('fedya_related_title', __('Може да ви е интересно и:', 'fedya-related')),
-            'columns' => '' // auto, 2, 3, 4
+            'title' => get_option('fedya_related_title', __('Може да ви е интересно и:', 'fedya-related-articles')),
+            'columns' => ''
         ], $atts);
         
         $post_id = get_the_ID();
@@ -79,7 +76,6 @@ class fedya_Related_Articles {
     }
 
     private function get_related_articles($post_id, $limit = 3) {
-        // Кеширане за по-добра производителност
         $cache_key = 'fedya_related_' . $post_id . '_' . $limit;
         $cached = wp_cache_get($cache_key, 'fedya_related');
         
@@ -95,7 +91,7 @@ class fedya_Related_Articles {
 
         $result = [];
 
-        // НИВО 1: Търси по тагове И категории (най-силна връзка)
+        // НИВО 1: Търси по тагове И категории
         if (!empty($tag_ids) && !empty($cat_ids)) {
             $result = $this->query_related($post_id, [
                 'relation' => 'AND',
@@ -122,26 +118,25 @@ class fedya_Related_Articles {
             $result = array_merge($result, $by_cats);
         }
 
-        // НИВО 4: Ако още не стига, вземи последни статии (fallback)
+        // НИВО 4: Ако още не стига, вземи последни статии
         if (count($result) < $limit) {
             $needed = $limit - count($result);
             $recent = $this->query_related($post_id, [], $needed, $result);
             $result = array_merge($result, $recent);
         }
 
-        // Кешираме за 1 час
         wp_cache_set($cache_key, $result, 'fedya_related', 3600);
         
         return array_slice($result, 0, $limit);
     }
 
     private function query_related($post_id, $tax_query, $limit, $exclude = []) {
-        $exclude[] = $post_id; // Винаги изключваме текущата статия
+        $exclude[] = $post_id;
         
         $args = [
             'post_type' => 'post',
             'post__not_in' => $exclude,
-            'posts_per_page' => $limit * 2, // Вземаме повече за по-добър избор
+            'posts_per_page' => $limit * 2,
             'fields' => 'ids',
             'orderby' => 'date',
             'order' => 'DESC',
@@ -158,7 +153,6 @@ class fedya_Related_Articles {
     }
 
     private function render_related($posts, $title, $columns = '') {
-        // Динамични колони според параметър
         $grid_class = 'fedya-related-grid';
         if ($columns === '2') {
             $grid_class .= ' fedya-cols-2';
@@ -208,7 +202,6 @@ class fedya_Related_Articles {
             $post_link = get_permalink($post_id);
             $thumbnail = get_the_post_thumbnail($post_id, 'medium', ['alt' => $post_title, 'loading' => 'lazy']);
             
-            // Опционален excerpt за по-богата информация
             $show_excerpt = get_option('fedya_related_excerpt', 'no') === 'yes';
             $excerpt = $show_excerpt ? wp_trim_words(get_the_excerpt($post_id), 15) : '';
 
@@ -218,7 +211,7 @@ class fedya_Related_Articles {
             if ($thumbnail) {
                 $html .= '<div class="fedya-related-thumb">' . $thumbnail . '</div>';
             } else {
-                $html .= '<div class="fedya-related-thumb placeholder">' . esc_html__('Без изображение', 'fedya-related') . '</div>';
+                $html .= '<div class="fedya-related-thumb placeholder">' . esc_html__('Без изображение', 'fedya-related-articles') . '</div>';
             }
 
             $html .= '<div class="fedya-related-info">';
@@ -236,14 +229,30 @@ class fedya_Related_Articles {
     }
 
     private function debug_message() {
-        return '<div class="fedya-related-debug">' . esc_html__('fedya Related: Няма свързани статии. Добавете общи тагове или категории.', 'fedya-related') . '</div>';
+        $post_id = get_the_ID();
+        $tags = wp_get_post_tags($post_id);
+        $cats = wp_get_post_categories($post_id);
+        
+        $debug = '<div class="fedya-related-debug">';
+        $debug .= '<strong>' . esc_html__('fedya Related Debug:', 'fedya-related-articles') . '</strong><br>';
+        $debug .= esc_html__('Тагове:', 'fedya-related-articles') . ' ' . (!empty($tags) ? count($tags) : '0') . ' | ';
+        $debug .= esc_html__('Категории:', 'fedya-related-articles') . ' ' . (!empty($cats) ? count($cats) : '0') . '<br>';
+        
+        if (empty($tags) && empty($cats)) {
+            $debug .= '<em>' . esc_html__('Няма нито тагове, нито категории. Добавете поне едно от двете.', 'fedya-related-articles') . '</em>';
+        } else {
+            $debug .= '<em>' . esc_html__('Има тагове/категории, но няма други статии с тях.', 'fedya-related-articles') . '</em>';
+        }
+        
+        $debug .= '</div>';
+        return $debug;
     }
 
     // === НАСТРОЙКИ ===
     public function add_settings_page() {
         add_options_page(
-            __('fedya Related Articles', 'fedya-related'),
-            __('Свързани статии', 'fedya-related'),
+            __('fedya Related Articles', 'fedya-related-articles'),
+            __('Свързани статии', 'fedya-related-articles'),
             'manage_options',
             'fedya-related',
             [$this, 'settings_page']
@@ -251,43 +260,71 @@ class fedya_Related_Articles {
     }
 
     public function register_settings() {
-        register_setting('fedya_related_group', 'fedya_related_limit');
-        register_setting('fedya_related_group', 'fedya_related_title');
-        register_setting('fedya_related_group', 'fedya_related_auto');
-        register_setting('fedya_related_group', 'fedya_related_excerpt');
+        register_setting('fedya_related_group', 'fedya_related_limit', [
+            'type' => 'integer',
+            'sanitize_callback' => [$this, 'sanitize_limit'],
+            'default' => 3
+        ]);
+        
+        register_setting('fedya_related_group', 'fedya_related_title', [
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => __('Може да ви е интересно и:', 'fedya-related-articles')
+        ]);
+        
+        register_setting('fedya_related_group', 'fedya_related_auto', [
+            'type' => 'string',
+            'sanitize_callback' => [$this, 'sanitize_checkbox'],
+            'default' => 'yes'
+        ]);
+        
+        register_setting('fedya_related_group', 'fedya_related_excerpt', [
+            'type' => 'string',
+            'sanitize_callback' => [$this, 'sanitize_checkbox'],
+            'default' => 'no'
+        ]);
+    }
+
+    public function sanitize_limit($value) {
+        $value = absint($value);
+        return max(1, min(10, $value));
+    }
+
+    public function sanitize_checkbox($value) {
+        return ($value === 'yes') ? 'yes' : 'no';
     }
 
     public function settings_page() {
         ?>
         <div class="wrap">
-            <h1><?php esc_html_e('fedya Related Articles', 'fedya-related'); ?></h1>
+            <h1><?php esc_html_e('fedya Related Articles', 'fedya-related-articles'); ?></h1>
             <form method="post" action="options.php">
                 <?php settings_fields('fedya_related_group'); ?>
                 <table class="form-table">
                     <tr>
-                        <th><?php esc_html_e('Заглавие', 'fedya-related'); ?></th>
-                        <td><input type="text" name="fedya_related_title" value="<?php echo esc_attr(get_option('fedya_related_title', __('Може да ви е интересно и:', 'fedya-related'))); ?>" class="regular-text" /></td>
+                        <th><?php esc_html_e('Заглавие', 'fedya-related-articles'); ?></th>
+                        <td><input type="text" name="fedya_related_title" value="<?php echo esc_attr(get_option('fedya_related_title', __('Може да ви е интересно и:', 'fedya-related-articles'))); ?>" class="regular-text" /></td>
                     </tr>
                     <tr>
-                        <th><?php esc_html_e('Брой статии', 'fedya-related'); ?></th>
+                        <th><?php esc_html_e('Брой статии', 'fedya-related-articles'); ?></th>
                         <td><input type="number" name="fedya_related_limit" value="<?php echo esc_attr(get_option('fedya_related_limit', 3)); ?>" min="1" max="10" style="width:60px;" /></td>
                     </tr>
                     <tr>
-                        <th><?php esc_html_e('Автоматично показване', 'fedya-related'); ?></th>
+                        <th><?php esc_html_e('Автоматично показване', 'fedya-related-articles'); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="fedya_related_auto" value="yes" <?php checked(get_option('fedya_related_auto', 'yes'), 'yes'); ?> />
-                                <?php esc_html_e('Показвай в края на всяка статия', 'fedya-related'); ?>
+                                <?php esc_html_e('Показвай в края на всяка статия', 'fedya-related-articles'); ?>
                             </label>
-                            <p class="description"><?php esc_html_e('Ако е изключено – използвай [fedya_related] или [fedya] ръчно', 'fedya-related'); ?></p>
+                            <p class="description"><?php esc_html_e('Ако е изключено – използвай [fedya_related] или [fedya] ръчно', 'fedya-related-articles'); ?></p>
                         </td>
                     </tr>
                     <tr>
-                        <th><?php esc_html_e('Показвай извадка', 'fedya-related'); ?></th>
+                        <th><?php esc_html_e('Показвай извадка', 'fedya-related-articles'); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="fedya_related_excerpt" value="yes" <?php checked(get_option('fedya_related_excerpt', 'no'), 'yes'); ?> />
-                                <?php esc_html_e('Показвай кратко описание под заглавието', 'fedya-related'); ?>
+                                <?php esc_html_e('Показвай кратко описание под заглавието', 'fedya-related-articles'); ?>
                             </label>
                         </td>
                     </tr>
@@ -296,7 +333,7 @@ class fedya_Related_Articles {
             </form>
 
             <hr>
-            <h3><?php esc_html_e('Shortcode примери', 'fedya-related'); ?></h3>
+            <h3><?php esc_html_e('Shortcode примери', 'fedya-related-articles'); ?></h3>
             <p><code>[fedya]</code> – кратък вариант (НОВО!)</p>
             <p><code>[fedya_related]</code> – стандартен (работи както преди)</p>
             <p><code>[fedya limit="5"]</code> – с 5 статии</p>

@@ -3,9 +3,9 @@
 **Contributors:** fedya Serafiev  
 **Tags:** related posts, related articles, SEO, internal linking, engagement  
 **Requires at least:** 5.0  
-**Tested up to:** 6.7  
+**Tested up to:** 6.8  
 **Requires PHP:** 7.4  
-**Stable tag:** 3.4  
+**Stable tag:** 3.5  
 **License:** GPLv2 or later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -123,13 +123,13 @@ Navigate to **Settings → Related Articles** in your WordPress admin:
 1. **Title** - Change the heading text (default: "You might also like:")
 2. **Number of Posts** - How many related posts to show (1-10)
 3. **Auto Display** - Toggle automatic display at end of posts
-4. **Show Excerpt** - Display short post descriptions under titles (NEW in v3.4)
+4. **Show Excerpt** - Display short post descriptions under titles (NEW in v3.5)
 
 ---
 
 ## What's New
 
-### Version 3.4
+### Version 3.5
 - ✨ **4-level intelligent matching** - always finds related posts
 - 🎯 **Fallback to latest posts** - never shows empty related section
 - 🐛 **Better debug mode** - shows tag/category count for admins
@@ -149,7 +149,7 @@ Navigate to **Settings → Related Articles** in your WordPress admin:
 
 ### Why aren't related posts showing on some articles?
 
-With version 3.4+, this should never happen! The plugin now uses a 4-level matching system that always finds content. If you're an admin, you'll see a debug message explaining the matching levels used.
+With version 3.5+, this should never happen! The plugin now uses a 4-level matching system that always finds content. If you're an admin, you'll see a debug message explaining the matching levels used.
 
 ### Can I use both shortcodes on the same site?
 
@@ -205,7 +205,7 @@ Yes! The plugin is fully translatable using the `fedya-related` text domain. Tra
 
 ## Changelog
 
-### 3.4 (2024)
+### 3.5 (2024)
 - Added 4-level intelligent matching algorithm
 - Added fallback to latest posts
 - Improved debug information display
